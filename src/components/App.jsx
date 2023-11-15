@@ -1,62 +1,48 @@
 import { ContactForm } from './ContactForm/ContactForm';
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { List } from './List/List';
 import { Filter } from './Filter/Filter';
 
 const KEY = 'contacts';
-const contacts = JSON.parse(window.localStorage.getItem(KEY)) ?? [];
+const contactsArr = JSON.parse(window.localStorage.getItem(KEY)) ?? [];
 
-export class App extends Component{
-  state = {
-    contacts: contacts ,
-    filter: ''
-  }
+export const App = () => {
 
-  componentDidUpdate(prevProps, prevState) {
-      if (prevState.contacts !== this.state.contacts) {
-        window.localStorage.setItem(KEY, JSON.stringify(this.state.contacts));
-      }
-  }
+  const [contacts, setContacts] = useState(contactsArr);
+  const [filter, setFilter] = useState('');
 
-  handleSubmit = (obj) => {
-    const hasContact = this.state.contacts.some(item => item.name.toLowerCase() === obj.name.toLowerCase())
+  useEffect(() => {
+    window.localStorage.setItem(KEY, JSON.stringify(contacts));
+  }, [contacts]);
+
+  const handleSubmit = (obj) => {
+    const hasContact = contacts.some(item => item.name.toLowerCase() === obj.name.toLowerCase())
     if (!hasContact) {
-      this.setState(prevState => {
-        return {
-          contacts: [...prevState.contacts, obj]
-        }
-      })
+      setContacts(prevContacts => [...prevContacts, obj]);
       localStorage.setItem(JSON.stringify(obj))
     } else {
       alert(`${obj.name} is already in contacts`);
     }
   }
 
-  updateFilter = (val) => {
-    this.setState({
-      filter: val
+  const updateFilter = (val) => { setFilter(val) };
+
+  const deleteContact = (val) => {
+    setContacts(prevContacts => {
+      return prevContacts.filter(item => item.id !== val)
     })
   }
 
-  deleteContact = (val) => {
-    this.setState(prevState => {
-      return {
-        contacts: prevState.contacts.filter(item => item.id !== val)
-      }
-    })
-  }
+  const searchItems = contacts.filter(item => {
+    return item.name.toLowerCase().includes(filter);
+  })
 
-  render () {
-    const searchItems = this.state.contacts.filter(item => {
-      return item.name.toLowerCase().includes(this.state.filter);
-    })
-    return (
-      <>
-        <ContactForm submit={this.handleSubmit} />
-        <Filter filter={this.state.filter} onUpdateFilter={this.updateFilter} />
-        {this.state.contacts.length > 0 && <List contacts={searchItems} onDel={this.deleteContact} />}
-      </>
-    );
-  }
+  return (
+    <>
+      <ContactForm submit={handleSubmit} />
+      <Filter filter={filter} onUpdateFilter={updateFilter} />
+      {contacts.length > 0 && <List contacts={searchItems} onDel={deleteContact} />}
+    </>
+  );
 
 };
